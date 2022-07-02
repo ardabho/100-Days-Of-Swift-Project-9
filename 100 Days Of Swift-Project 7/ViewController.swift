@@ -33,7 +33,9 @@ class ViewController: UITableViewController {
         DispatchQueue.global(qos: .userInitiated).async {
             if let url = URL(string: urlString) {
                 if let data = try? Data(contentsOf: url) {
+                    print(String(decoding: data, as: UTF8.self))
                     self.parse(json: data)
+                    self.filteredPetitions = self.petitions
                 } else {
                     self.showError()
                 }
@@ -41,9 +43,18 @@ class ViewController: UITableViewController {
                 self.showError()
             }
         }
+    }
+    
+    func parse(json: Data) {
+        let decoder = JSONDecoder()
         
-        
-        filteredPetitions = petitions
+        if let decodedData = try? decoder.decode(Petitions.self, from: json) {
+            petitions = decodedData.results
+            
+            DispatchQueue.main.async {
+                self.tableView.reloadData()
+            }
+        }
     }
     
     @objc func searchTapped() {
@@ -76,19 +87,6 @@ class ViewController: UITableViewController {
             ac.addAction(UIAlertAction(title: "OK", style: .default))
             self.present(ac, animated: true)
         }
-    }
-    
-    func parse(json: Data) {
-        let decoder = JSONDecoder()
-        
-        if let decodedData = try? decoder.decode(Petitions.self, from: json) {
-            petitions = decodedData.results
-            
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
-            }
-        }
-        
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
